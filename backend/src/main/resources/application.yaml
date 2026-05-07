@@ -1,9 +1,15 @@
-# 暂时排除数据库自动装配，等配好真正的 PostgreSQL 再删掉这行
-spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-
-# 服务端口
 server:
   port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/neuro_note
+    username: neuro
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    # 开启控制台打印 SQL 语句（排错神器）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
