@@ -1,0 +1,9 @@
+# 暂时排除数据库自动装配，等配好真正的 PostgreSQL 再删掉这行
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+# 服务端口
+server:
+  port: 8080
