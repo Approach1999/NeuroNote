@@ -9,16 +9,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class SaTokenConfig implements WebMvcConfigurer {
 
-    // 🌟 注册 Sa-Token 拦截器，打开注解式鉴权功能
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SaInterceptor(handle -> StpUtil.checkLogin()))
-                .addPathPatterns("/**") // 拦截所有路径
+                .addPathPatterns("/**")
                 .excludePathPatterns(
-                        "/auth/login",      // 登录接口放行
-                        "/auth/register",   // 注册接口放行
-                        "/error",           // 错误页面放行
-                        // 🌟 核心修复：放行跨域预检请求，否则前端会 401 报错！
+                        "/api/auth/login",      // 👉 必须加上 /api 前缀！
+                        "/api/auth/register",   // 👉 必须加上 /api 前缀！
+                        "/api/auth/refresh",    // 👉 顺便把刷新接口也放行！
+                        "/error",
                         "/**/OPTIONS"
                 );
     }

@@ -12,7 +12,7 @@ public class SysUser {
     private String username;
     private String passwordHash;
     private String avatarUrl;
+    private String refreshToken; // 👉 新增：长效刷新令牌
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
-
 }

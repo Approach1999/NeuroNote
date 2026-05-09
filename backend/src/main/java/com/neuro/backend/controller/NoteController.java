@@ -2,8 +2,7 @@ package com.neuro.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.neuro.backend.common.R;
-import com.neuro.backend.common.Result;
+import com.neuro.backend.common.R; // 👉 统一使用 R
 import com.neuro.backend.dto.NoteDTO;
 import com.neuro.backend.dto.RelationDTO;
 import com.neuro.backend.entity.Note;
@@ -15,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/note")
+@RequestMapping("/api/notes") // 👉 修改：复数路径
 @RequiredArgsConstructor
 public class NoteController {
 
@@ -29,11 +28,11 @@ public class NoteController {
     }
 
     @GetMapping
-    public Result<Page<Note>> list(
+    public R<Page<Note>> list(
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) Long folderId) {
-        return Result.success(noteService.getMyNotes(folderId, pageNum, pageSize));
+        return R.ok(noteService.getMyNotes(folderId, pageNum, pageSize));
     }
 
     @PutMapping("/{id}")
@@ -59,11 +58,11 @@ public class NoteController {
 
     @GetMapping("/{id}")
     public R<Note> getNoteDetail(@PathVariable Long id) {
-        Note note = noteService.getNoteDetail(id);
-        return R.ok(note);
+        return R.ok(noteService.getNoteDetail(id));
     }
 
-    @GetMapping("/folder/{folderId}")
+    // 👉 修改：更符合 RESTful 子资源语义的路径
+    @GetMapping("/by-folder/{folderId}")
     public R<Page<Note>> listByFolder(
             @PathVariable Long folderId,
             @RequestParam(defaultValue = "1") Integer page,
@@ -71,25 +70,21 @@ public class NoteController {
         return R.ok(noteService.listByFolder(folderId, page, size));
     }
 
-    // 👉 新增：获取笔记历史版本列表
     @GetMapping("/{id}/versions")
     public R<List<NoteVersion>> getVersions(@PathVariable Long id) {
         return R.ok(noteService.getNoteVersions(id));
     }
 
-    // 👉 新增：回滚到指定版本
     @PostMapping("/{id}/rollback/{versionId}")
     public R<Void> rollback(@PathVariable Long id, @PathVariable Long versionId) {
         noteService.rollbackNote(id, versionId);
         return R.ok();
     }
 
-    // 👉 新增：手动建立双链关联
     @SaCheckLogin
     @PostMapping("/relations")
     public R<Void> addRelation(@RequestBody RelationDTO dto) {
         noteService.addRelation(dto);
         return R.ok();
     }
-
 }

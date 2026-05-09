@@ -1,7 +1,7 @@
 package com.neuro.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import com.neuro.backend.common.Result;
+import com.neuro.backend.common.R; // 👉 统一使用 R
 import com.neuro.backend.dto.FolderDTO;
 import com.neuro.backend.entity.Folder;
 import com.neuro.backend.service.FolderService;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/folder")
+@RequestMapping("/api/folders") // 👉 修改：复数路径
 @SaCheckLogin
 public class FolderController {
 
@@ -19,23 +19,24 @@ public class FolderController {
     private FolderService folderService;
 
     @PostMapping
-    public Result<Folder> create(@RequestBody FolderDTO dto) {
-        return Result.success(folderService.createFolder(dto));
+    public R<Folder> create(@RequestBody FolderDTO dto) {
+        return R.ok(folderService.createFolder(dto));
     }
 
-    @GetMapping
-    public Result<List<Folder>> list() {
-        return Result.success(folderService.getFolders());
+    // 👉 修改：PDF 契约要求 GET /api/folders/tree
+    @GetMapping("/tree")
+    public R<List<Folder>> list() {
+        return R.ok(folderService.getFolders());
     }
 
     @PutMapping("/{id}")
-    public Result<Folder> update(@PathVariable Long id, @RequestBody FolderDTO dto) {
-        return Result.success(folderService.updateFolder(id, dto));
+    public R<Folder> update(@PathVariable Long id, @RequestBody FolderDTO dto) {
+        return R.ok(folderService.updateFolder(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
+    public R<Void> delete(@PathVariable Long id) {
         folderService.deleteFolder(id);
-        return Result.success(null);
+        return R.ok();
     }
 }
