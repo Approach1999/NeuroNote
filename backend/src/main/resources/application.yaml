@@ -3,13 +3,17 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/neuro_note
+    url: jdbc:postgresql://localhost:5433/postgres
     username: neuro
     password: 123456
     driver-class-name: org.postgresql.Driver
 
-# MyBatis-Plus 配置
+
 mybatis-plus:
   configuration:
-    # 开启控制台打印 SQL 语句（排错神器）
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true # 驼峰转换
+  global-config:
+    db-config:
+      # 插入和更新时，只要 Java 字段是 null，就不往 SQL 里拼这个字段！
+      insert-strategy: not_null
+      update-strategy: not_null
