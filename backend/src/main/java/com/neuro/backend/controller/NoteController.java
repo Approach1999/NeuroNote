@@ -1,9 +1,13 @@
 package com.neuro.backend.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.neuro.backend.common.R;
+import com.neuro.backend.common.Result;
 import com.neuro.backend.dto.NoteDTO;
+import com.neuro.backend.dto.RelationDTO;
 import com.neuro.backend.entity.Note;
+import com.neuro.backend.entity.NoteVersion;
 import com.neuro.backend.service.NoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +21,6 @@ public class NoteController {
 
     private final NoteService noteService;
 
-    // 加上这个注解，代表这个接口下的所有方法必须登录才能访问！
     @SaCheckLogin
     @PostMapping
     public R<Void> create(@RequestBody NoteDTO dto) {
@@ -25,23 +28,68 @@ public class NoteController {
         return R.ok();
     }
 
-    @SaCheckLogin
     @GetMapping
-    public R<List<Note>> list() {
-        return R.ok(noteService.getMyNotes());
+    public Result<Page<Note>> list(
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) Long folderId) {
+        return Result.success(noteService.getMyNotes(folderId, pageNum, pageSize));
     }
 
-    // 修改接口
     @PutMapping("/{id}")
     public R<Void> update(@PathVariable Long id, @RequestBody NoteDTO dto) {
         noteService.updateNote(id, dto);
         return R.ok();
     }
 
-    // 删除接口
     @DeleteMapping("/{id}")
     public R<Void> delete(@PathVariable Long id) {
         noteService.deleteNote(id);
         return R.ok();
     }
+
+    @GetMapping("/search")
+    public R<Page<Note>> search(
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String outlineKeyword,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return R.ok(noteService.searchNotes(tag, outlineKeyword, pageNum, pageSize));
+    }
+
+    @GetMapping("/{id}")
+    public R<Note> getNoteDetail(@PathVariable Long id) {
+        Note note = noteService.getNoteDetail(id);
+        return R.ok(note);
+    }
+
+    @GetMapping("/folder/{folderId}")
+    public R<Page<Note>> listByFolder(
+            @PathVariable Long folderId,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "20") Integer size) {
+        return R.ok(noteService.listByFolder(folderId, page, size));
+    }
+
+    // 👉 新增：获取笔记历史版本列表
+    @GetMapping("/{id}/versions")
+    public R<List<NoteVersion>> getVersions(@PathVariable Long id) {
+        return R.ok(noteService.getNoteVersions(id));
+    }
+
+    // 👉 新增：回滚到指定版本
+    @PostMapping("/{id}/rollback/{versionId}")
+    public R<Void> rollback(@PathVariable Long id, @PathVariable Long versionId) {
+        noteService.rollbackNote(id, versionId);
+        return R.ok();
+    }
+
+    // 👉 新增：手动建立双链关联
+    @SaCheckLogin
+    @PostMapping("/relations")
+    public R<Void> addRelation(@RequestBody RelationDTO dto) {
+        noteService.addRelation(dto);
+        return R.ok();
+    }
+
 }

@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/postgres
+    url: jdbc:postgresql://localhost:5433/postgres?stringtype=unspecified
     username: neuro
     password: 123456
     driver-class-name: org.postgresql.Driver

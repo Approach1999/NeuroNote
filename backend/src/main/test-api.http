@@ -63,20 +63,195 @@ Content-Type: application/json
 GET http://localhost:8080/api/note
 
 
-### 8. 修改笔记 (改 id=16)
+### 8. 修改笔记 (改 id=17)
 PUT http://localhost:8080/api/note/17
 Content-Type: application/json
 
 {
-  "title": "我的第一篇神经笔记（已修改）",
-  "content": "今天彻底搞定了 MyBatis-Plus 和 PG 的映射！",
-  "tags": ["Java", "PG"]
+  "title": "Spring Boot 入门，特别是版本回滚",
+  "content": "今天学了 Spring 的 JSONB 查询...,e,还有回滚",
+  "tags": ["Java", "Spring"],
+  "outlineJson": [{"l":1,"t":"Spring Boot 核心特性"},{"l":2,"t":"自动配置原理"}]
 }
 
-### 9. 删除笔记 (软删除 id=15)
-DELETE http://localhost:8080/api/note/19
+
+### 9. 删除笔记 (软删除 id=20)
+DELETE http://localhost:8080/api/note/20
 
 
-### 10. 再次查询 (验证：15消失，16标题变了)
-GET http://localhost:8080/api/note
+### 10. 分页查询笔记 (查第1页，每页2条)
+GET http://localhost:8080/api/note?pageNum=1&pageSize=2
+
+
+
+### 11. 创建根文件夹
+POST http://localhost:8080/api/folder
+Content-Type: application/json
+
+{
+  "name": "Java学习",
+  "parentId": null,
+  "sortOrder": 1
+}
+
+### 12. 获取所有文件夹 (看看有没有刚建的)
+GET http://localhost:8080/api/folder
+
+### 13. 修改文件夹 (把名字改掉，假设 id=1)
+PUT http://localhost:8080/api/folder/1
+Content-Type: application/json
+
+{
+  "name": "Java进阶学习"
+}
+
+### 14. 删除空文件夹 (假设 id=1)
+DELETE http://localhost:8080/api/folder/1
+
+### 15. 高级搜索：查出带有 "Spring" 标签的笔记
+GET http://localhost:8080/api/note/search?tag=Spring
+
+### 16. 高级搜索：查出大纲里包含 "Spring Boot" 关键词的笔记
+GET http://localhost:8080/api/note/search?outlineKeyword=Spring Boot
+
+### 17. 高级搜索：双管齐下（既有 Java 标签，大纲又包含 Spring）
+GET http://localhost:8080/api/note/search?tag=Java&outlineKeyword=Spring
+
+### 18. 获取单篇笔记详情 (假设 id=17)
+GET http://localhost:8080/api/note/17
+
+### 19. 更新笔记 - 内容未改变 (Hash相同，应该秒返回，不触发DB写)
+PUT http://localhost:8080/api/note/17
+Content-Type: application/json
+
+{
+  "title": "Spring Boot 入门",
+  "content": "今天学了 Spring 的 JSONB 查询...",
+  "tags": ["Java", "Spring"],
+  "outlineJson": [{"l":1,"t":"Spring Boot 核心特性"},{"l":2,"t":"自动配置原理"}],
+  "contentHash": "你数据库里存的hash值，如果为空就传空字符串"
+}
+
+### 20. 获取文件夹下的笔记列表 (假设 folderId=1，返回结果里应该没有 content 字段)
+GET http://localhost:8080/api/note/folder/1?page=1&size=20
+
+
+### 22. 制造版本1：修改笔记 (改变内容和 Hash，触发存档)
+PUT http://localhost:8080/api/note/17
+Content-Type: application/json
+
+
+{
+  "title": "版本1：学习 Spring Boot",
+  "content": "这是第一次修改的内容，关于Spring的自动配置。",
+  "tags": ["Java", "Spring"],
+  "outlineJson": [{"l":1,"t":"Spring Boot 入门"}],
+  "contentHash": "hash_v1"
+}
+
+### 23. 制造版本2：再次修改笔记 (改变内容和 Hash，再触发一次存档)
+PUT http://localhost:8080/api/note/17
+Content-Type: application/json
+
+{
+  "title": "版本2：学习 MyBatis-Plus",
+  "content": "这是第二次修改的内容，MP的分页真好用！",
+  "tags": ["Java", "MyBatis"],
+  "outlineJson": [{"l":1,"t":"MyBatis-Plus 核心逻辑"}],
+  "contentHash": "hash_v2"
+}
+
+### 24. 制造版本3：第三次修改 (当前最新版本)
+PUT http://localhost:8080/api/note/17
+Content-Type: application/json
+
+{
+  "title": "版本3：PostgreSQL 降维打击",
+  "content": "这是第三次修改，PG的JSONB简直是神！",
+  "tags": ["Java", "PG"],
+  "outlineJson": [{"l":1,"t":"PG 高级查询"}],
+  "contentHash": "hash_v3"
+}
+
+### 25. 🌟 查询笔记 17 的历史版本列表
+GET http://localhost:8080/api/note/17/versions
+
+> {%
+    client.log("历史版本列表：");
+    client.log(response.body);
+    // 默认取第一个（最新的历史版本）的ID作为回滚目标，或者你从日志里手动挑一个
+    if(response.body.data && response.body.data.length > 0) {
+        client.global.set("rollback_version_id", response.body.data[0].id);
+        client.log("自动选中最新历史版本 ID: " + response.body.data[0].id + " 用于回滚");
+    }
+%}
+
+### 26. 🌟 执行回滚 (回滚到刚才查到的某个 version_id)
+# 注意：{{rollback_version_id}} 是上面脚本自动捕获的，你也可以手动填入一个具体的数字，比如 1
+POST http://localhost:8080/api/note/17/rollback/{{rollback_version_id}}
+
+### 27. 验证回滚结果：查看笔记详情 (内容应该变回历史版本了，且 content_hash 被清空)
+GET http://localhost:8080/api/note/17
+
+### 28. 验证回滚是否产生了新版本：再次查询版本列表 (应该多了一个"回滚前自动存档")
+GET http://localhost:8080/api/note/17/versions
+
+### 29. 手动建立双链 (假设 16 和 17 互相引用)
+POST http://localhost:8080/api/note/relations
+Content-Type: application/json
+
+{
+  "noteIdA": 16,
+  "noteIdB": 17,
+  "relationType": "REFERENCE"
+}
+
+### 30. 🌟 获取全局图谱数据 (见证奇迹的时刻！)
+GET http://localhost:8080/api/graph/global
+
+### 31. 获取今日待复习卡片
+GET http://localhost:8080/api/flashcards/due
+
+
+### 32. 🌟 提交复习结果 (模拟前端 Wasm 算好的新状态)
+POST http://localhost:8080/api/flashcards/batch-update
+Content-Type: application/json
+
+[
+  {
+    "id": 1,
+    "rating": 4,
+    "new_state": {
+      "interval": 1,
+      "repetition": 1,
+      "efactor": 2.6,
+      "next_review_date": "2026-05-10"
+    }
+  }
+]
+
+
+### 33. 🌟 获取知识分布雷达图 (PG 数组展开绝杀)
+GET http://localhost:8080/api/stats/tag-distribution
+
+
+### 34. 🌟 获取学习热力图 (默认今年)
+GET http://localhost:8080/api/stats/activity-heatmap
+
+### 35. 测试 Tag 查询 (搜 Java，应该查出 16 和 17 两条)
+GET http://localhost:8080/api/note/search?tag=Java
+
+
+### 36. 🌟 测试大纲精确查询 (搜 "PG 高级查询"，命中 GIN 索引，应该只查出 17)
+GET http://localhost:8080/api/note/search?outlineKeyword=PG 高级查询
+
+
+### 37. 🌟 测试大纲模糊查询失败 (搜 "查询"，因为 @> 是精确包含，不再支持 LIKE 模糊，应该查出 0 条)
+GET http://localhost:8080/api/note/search?outlineKeyword=查询
+
+
+### 38. 测试组合查询 (搜标签 PG 且大纲包含 "PG 高级查询"，应该只查出 17)
+GET http://localhost:8080/api/note/search?tag=PG&outlineKeyword=PG 高级查询
+
+
 
